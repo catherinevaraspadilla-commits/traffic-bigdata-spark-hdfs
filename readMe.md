@@ -66,28 +66,56 @@ Check status:
 No token or password is required.
 
 -------------------------------------------------------
-4. VERIFY HDFS IS WORKING
+4. LOAD THE DATA INTO HDFS
 -------------------------------------------------------
-Open a terminal:
+Before proceeding, make sure you have downloaded the CSV files from the
+NSW Open Data Portal and placed them in:
+
+    data/data_sources/
+
+These files are on your local machine, not inside the container.
+
+-------------------------------------------------------
+STEP 1 — COPY THE FILES INTO THE NAMENODE CONTAINER
+-------------------------------------------------------
+Run the following from the project root:
+
+    docker cp data/data_sources hdfs-namenode:/data_sources
+
+This creates the folder `/data_sources` **inside the container** and
+copies all your local CSV files into it.
+
+-------------------------------------------------------
+STEP 2 — UPLOAD THE FILES TO HDFS
+-------------------------------------------------------
+Enter the container:
 
     docker exec -it hdfs-namenode bash
-    hdfs dfs -ls -R /data/raw
 
-Expected output:
-    /data/raw/bus_on_time.csv
+Create the HDFS directory:
+
+    hdfs dfs -mkdir -p /data/raw
+
+Upload all CSVs from the container filesystem into HDFS:
+
+    hdfs dfs -put /data_sources/*.csv /data/raw/
+
+Verify the upload:
+
+    hdfs dfs -ls /data/raw
+
+You should see:
+
     /data/raw/road_traffic_counts_hourly_permanent0.csv
     /data/raw/road_traffic_counts_hourly_permanent1.csv
     /data/raw/road_traffic_counts_hourly_permanent2.csv
     /data/raw/road_traffic_counts_hourly_permanent3.csv
-    /data/raw/station_ref.csv
+    /data/raw/road_traffic_counts_station_reference.csv
 
-If the files are missing, upload them from your local machine:
+Exit:
 
-    hdfs dfs -mkdir -p /data/raw
-    hdfs dfs -put /path/to/local/*.csv /data/raw/
-
-Exit the container with:
     exit
+
 
 -------------------------------------------------------
 5. OPEN JUPYTER NOTEBOOK
