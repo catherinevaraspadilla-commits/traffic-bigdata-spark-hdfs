@@ -1,0 +1,56 @@
+version: "3.9"
+
+services:
+  hdfs-namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: hdfs-namenode
+    hostname: namenode
+    ports:
+      - "9870:9870"   # NameNode UI
+      - "8020:8020"   # fs.defaultFS
+    volumes:
+      - namenode:/hadoop/dfs/name
+    environment:
+      - CLUSTER_NAME=sydney-traffic
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
+      - HDFS_CONF_dfs_permissions_enabled=false
+
+  hdfs-datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: hdfs-datanode
+    hostname: datanode
+    depends_on:
+      - hdfs-namenode
+    ports:
+      - "9864:9864"   # DataNode UI
+    volumes:
+      - datanode:/hadoop/dfs/data
+    environment:
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
+      - SERVICE_PRECONDITION=namenode:9870
+      - HDFS_CONF_dfs_permissions_enabled=false
+
+  spark-notebook:
+    image: jupyter/pyspark-notebook:latest
+    container_name: spark-notebook
+    hostname: spark-notebook
+    depends_on:
+      - hdfs-namenode
+      - hdfs-datanode
+    ports:
+      - "8888:8888"   # Jupyter
+    environment:
+      - SPARK_OPTS=--conf spark.hadoop.fs.defaultFS=hdfs://namenode:8020
+      - JUPYTER_TOKEN=''
+    command: >
+      start-notebook.sh
+        --ServerApp.token=''
+        --ServerApp.password=''
+        --NotebookApp.token=''
+        --NotebookApp.password=''
+    volumes:
+      - ./notebooks:/home/jovyan/work   # <- ruta correcta para esta imagen
+
+volumes:
+  namenode:
+  datanode:
